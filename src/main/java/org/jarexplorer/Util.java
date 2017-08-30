@@ -94,4 +94,25 @@ public class Util
         return resourceName.replace(".", "/");
     }
 
+    /**
+     * Converts a fully qualified name of a java class to its path. <br/>
+     * For example: com.hello.world.MainClass.java will converted to com/hello/world/MainClass.java
+     * @param resourceName Fqn of a file with dots
+     * @return resource path
+     */
+    public static String convertFqnToPathWithExtension(String resourceName)
+    {
+        return convertFqnToPath(resourceName, true);
+    }
+
+    /**
+     * Converts a fully qualified name of a java class to its path. <br/>
+     * For example: com.hello.world.MainClass will converted to com/hello/world/MainClass
+     * @param resourceName Fqn of a file with dots
+     * @return resource path
+     */
+    public static String convertFqnToPathWithoutExtension(String resourceName)
+    {
+        return convertFqnToPath(resourceName, false);
+    }
 }

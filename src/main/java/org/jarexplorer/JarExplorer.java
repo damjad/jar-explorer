@@ -328,12 +328,12 @@ public class JarExplorer extends JFrame {
             found = results.size();
 
             if(found == 0) {
-                results = index.search(Util.convertFqnToPath(searchTF.getText(), false));
+                results = index.search(Util.convertFqnToPathWithExtension(searchTF.getText()));
                 found = results.size();
             }
 
             if(found == 0) {
-                results = index.search(Util.convertFqnToPath(searchTF.getText(), true));
+                results = index.search(Util.convertFqnToPathWithoutExtension(searchTF.getText()));
                 found = results.size();
             }
             resultsPanel.setResults("Found substring '" + searchTF.getText() + "' in all jars:", results);
