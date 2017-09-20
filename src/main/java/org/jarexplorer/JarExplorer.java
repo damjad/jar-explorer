@@ -216,6 +216,37 @@ public class JarExplorer extends JFrame {
         resultsPanel.setResults("Contents of " + jarFile, matchingClasses);
     }
 
+    private void scanFromCSVData() {
+
+        JTextField delimiter = new JTextField();
+        JTextField pathData = new JTextField();
+
+        delimiter.setText(";");
+
+        final JComponent[] inputs = new JComponent[] {
+                new JLabel("Delimiter"),
+                delimiter,
+                new JLabel("Please enter the paths of different directories or jar files separated by the above delimiter."),
+                pathData
+
+        };
+
+        int result = JOptionPane.showConfirmDialog(GUIUtil.getMainFrame(), inputs, "CSV Input", JOptionPane.PLAIN_MESSAGE);
+        if (result == JOptionPane.OK_OPTION)
+        {
+            if (Util.isBlankString(delimiter.getText()) || Util.isBlankString(pathData.getText()))
+            {
+                JOptionPane.showInternalMessageDialog(GUIUtil.getMainFrame(),
+                        "Delimiter or path data is missing. Please enter correct delimiter or csv data",
+                        "Error!",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+
+            scanPath(pathData.getText().split(delimiter.getText()));
+        }
+
+    }
+
     private void scanPath() {
         JFileChooser fc;
         if (prevFile != null) {
@@ -261,6 +292,15 @@ public class JarExplorer extends JFrame {
         });
 
         fileM.add(loadMI);
+
+        JMenuItem loadCommaSeparated = new JMenuItem("Load from Multiple directories or Jar Files");
+        loadCommaSeparated.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                scanFromCSVData();
+            }
+        });
+
+        fileM.add(loadCommaSeparated);
 
         JMenuItem exitMI = new JMenuItem("Exit");
         exitMI.addActionListener(new ActionListener() {
@@ -412,6 +452,93 @@ public class JarExplorer extends JFrame {
             }
         }
         fin.close();
+    }
+
+    /**
+     * Multi path indexing
+     * @param pathsStrArray
+     */
+    private void scanPath(String[] pathsStrArray)
+    {
+        List<File> files = new ArrayList<>();
+
+        for (String path : pathsStrArray)
+        {
+            File f = new File(path.trim());
+
+            if (!f.getPath().endsWith(".jar") && f.isFile()) {
+                GUIUtil.messageBox(this, "Message:", "Can process jar files only");
+                return;
+            }
+
+            files.add(f);
+        }
+        scanPath(files);
+    }
+
+
+    /**
+     * Multi path indexing
+     *
+     */
+    private void scanPath(final List<File> files)
+    {
+        init();
+
+        Runnable r = new Runnable()
+        {
+            public void run()
+            {
+                setCursor(new Cursor(Cursor.WAIT_CURSOR));
+                progressBar.setIndeterminate(true);
+                progressBar.setString("Parsing multiple paths !!");
+                ArrayList jarNameList = new ArrayList();
+                try
+                {
+                    for (File topDirectory : files)
+                    {
+
+                        String treeRoot;
+
+                        treeRoot = topDirectory.getCanonicalPath();
+
+
+                        if (!topDirectory.exists())
+                        {
+                            throw new RuntimeException("Path: '" + treeRoot + "' does not exist");
+                        }
+
+                        if (topDirectory.isFile())
+                        {
+                            jarNameList.add(topDirectory.getCanonicalPath());
+                            indexJarFile(topDirectory.getCanonicalPath());
+                        } else
+                        {
+                            scanDirectory(topDirectory, jarNameList);
+
+                        }
+                    }
+                    Collections.sort(jarNameList);
+                    jarFilePanel.setJarList(jarNameList);
+                } catch (Exception e)
+                {
+                    e.printStackTrace();
+                    progressBar.setString("failed to parse multi paths");
+                    GUIUtil.messageBoxWithDetails(JarExplorer.this, "Error Condition:", e);
+                } finally
+                {
+                    progressBar.setValue(0);
+                    progressBar.setIndeterminate(false);
+                    progressBar.setString("done path parsing");
+                    setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                    GUIUtil.getMainFrame().setTitle(JarExplorer.APP_NAME);
+                    GUIUtil.getMainFrame().repaint();
+                }
+
+            }
+        };
+
+        new Thread(r, "Parsing Thread").start();
     }
 
     /**
